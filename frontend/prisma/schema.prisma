@@ -1,0 +1,146 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Watchlist {
+  id      Int      @id @default(autoincrement())
+  ticker  String   @unique @db.VarChar(10)
+  name    String?  @db.VarChar(100)
+  addedAt DateTime @default(now()) @map("added_at")
+
+  @@map("watchlist")
+}
+
+model Candle {
+  id     Int      @id @default(autoincrement())
+  ticker String   @db.VarChar(10)
+  date   DateTime @db.Date
+  open   Decimal  @db.Decimal(12, 4)
+  high   Decimal  @db.Decimal(12, 4)
+  low    Decimal  @db.Decimal(12, 4)
+  close  Decimal  @db.Decimal(12, 4)
+  volume BigInt?
+
+  @@unique([ticker, date])
+  @@map("candles")
+}
+
+model PatternOccurrence {
+  id               Int      @id @default(autoincrement())
+  ticker           String   @db.VarChar(10)
+  patternName      String   @map("pattern_name") @db.VarChar(50)
+  detectedDate     DateTime @map("detected_date") @db.Date
+  candleCount      Int?     @map("candle_count")
+  priceAtDetection Decimal? @map("price_at_detection") @db.Decimal(12, 4)
+  priceAfter5d     Decimal? @map("price_after_5d") @db.Decimal(12, 4)
+  priceAfter10d    Decimal? @map("price_after_10d") @db.Decimal(12, 4)
+  maxGain10d       Decimal? @map("max_gain_10d") @db.Decimal(8, 4)
+  maxDrawdown10d   Decimal? @map("max_drawdown_10d") @db.Decimal(8, 4)
+  success5pct      Boolean? @map("success_5pct")
+  success10pct     Boolean? @map("success_10pct")
+
+  @@unique([ticker, patternName, detectedDate])
+  @@map("pattern_occurrences")
+}
+
+model ValidatedPattern {
+  id                  Int      @id @default(autoincrement())
+  ticker              String   @db.VarChar(10)
+  patternName         String   @map("pattern_name") @db.VarChar(50)
+  totalAppearances    Int?     @map("total_appearances")
+  totalSuccesses5pct  Int?     @map("total_successes_5pct")
+  totalSuccesses10pct Int?     @map("total_successes_10pct")
+  successRate5pct     Decimal? @map("success_rate_5pct") @db.Decimal(5, 2)
+  successRate10pct    Decimal? @map("success_rate_10pct") @db.Decimal(5, 2)
+  avgGain             Decimal? @map("avg_gain") @db.Decimal(8, 4)
+  avgMaxDrawdown      Decimal? @map("avg_max_drawdown") @db.Decimal(8, 4)
+  isValidated         Boolean  @default(false) @map("is_validated")
+  signalType          String?  @map("signal_type") @db.VarChar(10)
+  lastUpdated         DateTime @default(now()) @map("last_updated")
+
+  @@unique([ticker, patternName])
+  @@map("validated_patterns")
+}
+
+model Alert {
+  id           Int       @id @default(autoincrement())
+  ticker       String    @db.VarChar(10)
+  patternName  String    @map("pattern_name") @db.VarChar(100)
+  signalType   String    @map("signal_type") @db.VarChar(20)
+  /// 'technical' | 'pattern'
+  category     String    @default("pattern") @db.VarChar(20)
+  detectedAt   DateTime  @default(now()) @map("detected_at")
+  priceAtAlert Decimal?  @map("price_at_alert") @db.Decimal(12, 4)
+  /// RSI value at time of alert (Type 1)
+  rsiValue     Decimal?  @map("rsi_value") @db.Decimal(6, 2)
+  /// MA150 value at time of alert (Type 1)
+  ma150Value   Decimal?  @map("ma150_value") @db.Decimal(12, 4)
+  /// Historical pattern success rate % (Type 2)
+  successRate  Decimal?  @map("success_rate") @db.Decimal(5, 2)
+  /// Number of historical pattern occurrences (Type 2)
+  occurrences  Int?
+  outcome      String?   @db.VarChar(10)
+  actualGain   Decimal?  @map("actual_gain") @db.Decimal(8, 4)
+  resolvedAt   DateTime? @map("resolved_at")
+  highRisk     Boolean?  @default(false) @map("high_risk")
+  volumeRatio  Decimal?  @map("volume_ratio") @db.Decimal(6, 2)
+  stopLoss     Decimal?  @map("stop_loss") @db.Decimal(12, 4)
+  takeProfit   Decimal?  @map("take_profit") @db.Decimal(12, 4)
+  takeProfit2  Decimal?  @map("take_profit_2") @db.Decimal(12, 4)
+  rrRatio          Decimal?  @map("rr_ratio") @db.Decimal(6, 2)
+  rsVsSpy          Decimal?  @map("rs_vs_spy") @db.Decimal(8, 4)
+  /// Next earnings date (from yfinance)
+  earningsDate     DateTime? @map("earnings_date") @db.Date
+  /// True if earnings fall within 3 trading days of detection
+  earningsImminent Boolean   @default(false) @map("earnings_imminent")
+
+  @@map("alerts")
+}
+
+model PaperPortfolio {
+  id          Int     @id @default(1)
+  cashBalance Decimal @default(10000) @map("cash_balance") @db.Decimal(12, 4)
+
+  @@map("paper_portfolio")
+}
+
+model PaperPosition {
+  id         Int      @id @default(autoincrement())
+  ticker     String   @unique @db.VarChar(10)
+  quantity   Decimal  @db.Decimal(10, 4)
+  avgPrice   Decimal  @map("avg_price") @db.Decimal(12, 4)
+  stopLoss        Decimal? @map("stop_loss") @db.Decimal(12, 4)
+  takeProfit      Decimal? @map("take_profit") @db.Decimal(12, 4)
+  /// Highest close seen since entry — used to ratchet trailing stop
+  highestPrice    Decimal? @map("highest_price") @db.Decimal(12, 4)
+  /// Trailing stop distance as % (default 5 = 5% below highest price)
+  trailingStopPct Decimal  @default(5) @map("trailing_stop_pct") @db.Decimal(5, 2)
+  /// Sector string from yfinance (e.g. 'Technology')
+  sector          String?  @db.VarChar(50)
+  openedAt        DateTime @default(now()) @map("opened_at")
+  alertId         Int?     @map("alert_id")
+
+  @@map("paper_positions")
+}
+
+model PaperTrade {
+  id            Int      @id @default(autoincrement())
+  ticker        String   @db.VarChar(10)
+  action        String   @db.VarChar(4)
+  quantity      Decimal  @db.Decimal(10, 4)
+  pricePerShare Decimal  @map("price_per_share") @db.Decimal(12, 4)
+  totalCost     Decimal  @map("total_cost") @db.Decimal(12, 4)
+  stopLoss      Decimal? @map("stop_loss") @db.Decimal(12, 4)
+  takeProfit    Decimal? @map("take_profit") @db.Decimal(12, 4)
+  alertId       Int?     @map("alert_id")
+  executedAt    DateTime @default(now()) @map("executed_at")
+  notes         String?  @db.VarChar(200)
+  gainPct       Decimal? @map("gain_pct") @db.Decimal(8, 4)
+
+  @@map("paper_trades")
+}
