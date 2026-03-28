@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 export async function GET(req: NextRequest) {
   const limit = req.nextUrl.searchParams.get('limit') ?? '100'
   try {
-    const res = await fetch(`http://localhost:8000/paper-trades?limit=${limit}`, { cache: 'no-store' })
+    const res = await fetch(`${process.env.BACKEND_URL ?? 'http://localhost:8000'}/paper-trades?limit=${limit}`, { cache: 'no-store' })
     const data = await res.json()
     const transformed = data.map((t: any) => ({
       id:            t.id,

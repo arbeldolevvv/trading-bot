@@ -2,9 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(req: NextRequest) {
   const ticker = req.nextUrl.searchParams.get('ticker')
-  const url = ticker
-    ? `http://localhost:8000/patterns?ticker=${ticker}`
-    : 'http://localhost:8000/patterns'
+  const B = process.env.BACKEND_URL ?? 'http://localhost:8000'
+  const url = ticker ? `${B}/patterns?ticker=${ticker}` : `${B}/patterns`
   try {
     const res = await fetch(url, { cache: 'no-store' })
     const raw: any[] = await res.json()

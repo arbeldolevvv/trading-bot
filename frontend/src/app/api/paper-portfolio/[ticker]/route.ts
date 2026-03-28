@@ -6,7 +6,7 @@ export async function GET(
 ) {
   try {
     const res = await fetch(
-      `http://localhost:8000/paper-portfolio/position/${params.ticker}`,
+      `${process.env.BACKEND_URL ?? 'http://localhost:8000'}/paper-portfolio/position/${params.ticker}`,
       { cache: 'no-store' }
     )
     if (!res.ok) return NextResponse.json({ error: 'Not found' }, { status: 404 })

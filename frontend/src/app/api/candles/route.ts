@@ -7,7 +7,7 @@ export async function GET(req: NextRequest) {
 
   try {
     const res = await fetch(
-      `http://localhost:8000/candles/${encodeURIComponent(ticker.toUpperCase())}?days=${days}`,
+      `${process.env.BACKEND_URL ?? 'http://localhost:8000'}/candles/${encodeURIComponent(ticker.toUpperCase())}?days=${days}`,
       { cache: 'no-store' },
     )
     const data = await res.json()
