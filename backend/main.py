@@ -71,7 +71,13 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="PatternScanner API", version="0.4.0", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[config.FRONTEND_URL, "http://localhost:3000"],
+    allow_origins=[
+        config.FRONTEND_URL,
+        "http://localhost:3000",
+        "https://trading-bot-five-eta.vercel.app",
+        "https://*.vercel.app",
+    ],
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
