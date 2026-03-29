@@ -6,7 +6,10 @@ import type { StockProfile } from '@/types'
 
 const CandleChart = dynamic(() => import('./CandleChart'), { ssr: false })
 
-interface Props { ticker: string | null }
+interface Props {
+  ticker: string | null
+  onTickerChange?: (ticker: string) => void
+}
 
 const BULLISH_PATTERNS = new Set([
   'Hammer','Inverted Hammer','Bullish Engulfing','Morning Star',
@@ -46,9 +49,15 @@ function CriteriaBox({
   )
 }
 
-export default function StockProfilePanel({ ticker }: Props) {
+export default function StockProfilePanel({ ticker, onTickerChange }: Props) {
   const [profile, setProfile] = useState<StockProfile | null>(null)
   const [loading, setLoading] = useState(false)
+  const [searchInput, setSearchInput] = useState('')
+
+  const handleSearch = () => {
+    const t = searchInput.trim().toUpperCase()
+    if (t) onTickerChange?.(t)
+  }
 
   useEffect(() => {
     if (!ticker) { setProfile(null); return }
@@ -60,23 +69,55 @@ export default function StockProfilePanel({ ticker }: Props) {
       .finally(() => setLoading(false))
   }, [ticker])
 
+  const SearchBar = (
+    <div className="px-4 pt-4 pb-3 border-b border-app-border bg-app-surface shrink-0" dir="rtl">
+      <div className="flex gap-2">
+        <input
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value.toUpperCase())}
+          onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+          placeholder="הכנס טיקר... (לדוגמה AAPL)"
+          className="flex-1 bg-app-input border border-app-border rounded-xl px-4 py-2.5
+                     text-sm font-mono text-text-primary placeholder-text-muted
+                     focus:outline-none focus:border-accent transition-colors"
+          dir="ltr"
+        />
+        <button
+          onClick={handleSearch}
+          className="px-4 py-2.5 bg-accent text-white rounded-xl text-sm font-semibold hover:bg-accent/90 transition-colors"
+        >
+          חפש
+        </button>
+      </div>
+    </div>
+  )
+
   if (!ticker) return (
-    <div className="flex flex-col items-center justify-center h-full p-8 text-center" dir="rtl">
-      <div className="text-5xl mb-4">🔍</div>
-      <div className="text-text-primary font-semibold text-lg mb-2">ניתוח מניה</div>
-      <div className="text-text-dim text-sm">לחצ/י על מניה ברשימה כדי לראות את הניתוח</div>
+    <div className="flex flex-col h-full" dir="rtl">
+      {SearchBar}
+      <div className="flex flex-col items-center justify-center flex-1 p-8 text-center">
+        <div className="text-5xl mb-4">🔍</div>
+        <div className="text-text-primary font-semibold text-lg mb-2">ניתוח מניה</div>
+        <div className="text-text-dim text-sm">הכנס טיקר בחיפוש או לחץ על מניה ברשימה</div>
+      </div>
     </div>
   )
 
   if (loading) return (
-    <div className="p-4 space-y-3" dir="rtl">
-      {[...Array(4)].map((_, i) => <div key={i} className="h-20 bg-app-surface rounded-xl animate-pulse" />)}
+    <div className="flex flex-col h-full">
+      {SearchBar}
+      <div className="p-4 space-y-3" dir="rtl">
+        {[...Array(4)].map((_, i) => <div key={i} className="h-20 bg-app-surface rounded-xl animate-pulse" />)}
+      </div>
     </div>
   )
 
   if (!profile || profile.error) return (
-    <div className="flex flex-col items-center justify-center h-full p-8 text-center" dir="rtl">
-      <div className="text-text-dim text-sm">אין מספיק נתונים עבור {ticker} — הרץ סריקה תחילה</div>
+    <div className="flex flex-col h-full">
+      {SearchBar}
+      <div className="flex flex-col items-center justify-center flex-1 p-8 text-center" dir="rtl">
+        <div className="text-text-dim text-sm">אין מספיק נתונים עבור {ticker} — הרץ סריקה תחילה</div>
+      </div>
     </div>
   )
 
@@ -129,7 +170,9 @@ export default function StockProfilePanel({ ticker }: Props) {
   const stdPatterns  = profile.top_patterns.filter((p) => p.signal_type !== 'gold')
 
   return (
-    <div className="p-4 space-y-4 overflow-y-auto" dir="rtl">
+    <div className="flex flex-col h-full" dir="rtl">
+    {SearchBar}
+    <div className="flex-1 overflow-y-auto p-4 space-y-4">
 
       {/* ── Candlestick chart ── */}
       <CandleChart ticker={profile.ticker} />
@@ -283,6 +326,7 @@ export default function StockProfilePanel({ ticker }: Props) {
           הרץ סריקה כדי לחשב דפוסים היסטוריים
         </div>
       )}
+    </div>
     </div>
   )
 }

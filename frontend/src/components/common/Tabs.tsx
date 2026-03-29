@@ -19,8 +19,8 @@ export default function Tabs({ active, onChange, alertCount = 0 }: Props) {
   const tabs: Tab[] = [
     { id: 'alerts', label: 'התראות', icon: '🔔', count: alertCount },
     { id: 'analysis', label: 'ניתוח', icon: '🔍' },
-    { id: 'patterns', label: 'דפוסים', icon: '📊' },
-    { id: 'history', label: 'היסטוריה', icon: '📈' },
+    { id: 'analysis', label: 'ניתוח', icon: '📊' },
+    { id: 'watchlist', label: 'רשימה', icon: '📈' },
     { id: 'portfolio', label: 'תיק', icon: '💼' },
   ]
 

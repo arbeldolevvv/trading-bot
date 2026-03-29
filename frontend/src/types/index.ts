@@ -74,7 +74,7 @@ export interface StockProfile {
   }[]
 }
 
-export type TabId = 'alerts' | 'patterns' | 'history' | 'analysis' | 'portfolio'
+export type TabId = 'watchlist' | 'alerts' | 'analysis' | 'portfolio'
 
 export interface PaperPosition {
   ticker:          string
